@@ -1,0 +1,3 @@
+import fs from 'node:fs';
+let p='lib/demo.mjs',v=fs.readFileSync(p,'utf8');v=v.replace('p.actualId=existing.id;','if(!existing.sku){existing.sku=`BONKO-${p.id.toUpperCase()}-320`;existing.skuSynthetic=true;}p.actualId=existing.id;');fs.writeFileSync(p,v);
+p='components/workspace.tsx';v=fs.readFileSync(p,'utf8');v=v.replace("color:p.flavor==='Mango'?'#edb34d':'#7361bf'","color:p.color||(p.flavor==='Mango'?'#edb34d':'#7361bf')");v=v.replace('<span><i style={{background:\'#edb34d\'}}/>Mango</span><span><i style={{background:\'#7361bf\'}}/>Blackcurrant</span>',"{s.products.map((p:any)=><span key={p.id}><i style={{background:p.color||'#527ec4'}}/>{p.name}</span>)}");fs.writeFileSync(p,v);

@@ -1,0 +1,2 @@
+import {DatabaseSync} from 'node:sqlite';import {finishDemo} from '../lib/demo-finishing.mjs';
+const db=new DatabaseSync('data/grandeur.sqlite');db.exec('BEGIN IMMEDIATE');try{const s=JSON.parse(db.prepare('SELECT body FROM workspace WHERE id=1').get().body);finishDemo(s);db.prepare('UPDATE workspace SET body=? WHERE id=1').run(JSON.stringify(s));db.exec('COMMIT');console.log('Sample alert settings, transfer and adjustment populated.')}catch(e){db.exec('ROLLBACK');throw e}finally{db.close()}
