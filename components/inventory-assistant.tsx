@@ -1,32 +1,85 @@
 'use client';
 
 import {useEffect,useRef,useState} from 'react';
-import Link from 'next/link';
-import {ArrowRight,ArrowUp,BarChart3,Check,ChevronDown,Database,Download,Layers,LoaderCircle,MessageSquare,Plus,ShieldCheck,Sparkles,Table2,X} from 'lucide-react';
+import Image from 'next/image';
+import {ArrowLeft,ArrowUp,Boxes,Clock3,Database,FileText,Home,Mail,MessageSquare,Plus,Search,Settings,Share2,Sparkles,UserPlus,X} from 'lucide-react';
 import './inventory-assistant.css';
 
-type Answer={title:string;text:string;rows:{name:string;value:number;detail?:string}[];unit:string;metrics:{label:string;value:number}[];chartLabel:string;advice:string;link:string;scope:string;updatedAt:string;mode:string;intent:string;suggestions:string[]};
-type Message={id:string;query:string;answer?:Answer;error?:string};
-const suggestions=[{label:'Give me the big picture',query:'Summarize my inventory',hint:'Stock levels across your network',icon:Layers},{label:'What needs attention?',query:'Which batches expire in 1 month?',hint:'Spot expiry risks before they grow',icon:ShieldCheck},{label:'Compare my distributors',query:'Show stock by distributor and region',hint:'See where your stock is held',icon:BarChart3},{label:'Plan the next replenishment',query:'Which products have low stock?',hint:'Check availability against reorder levels',icon:MessageSquare}];
-const fmt=(n:number)=>n.toLocaleString('en-US');
+type Message={id:string;role:'user'|'bot';text:string};
 
-function Result({answer,onAsk,onClose}:{answer:Answer;onAsk:(q:string)=>void;onClose:()=>void}){
- const [view,setView]=useState('chart');const [all,setAll]=useState(false);
- const rows=all?answer.rows:answer.rows.slice(0,8);const max=Math.max(1,...answer.rows.map(r=>r.value));
- function download(){const csv=[['Name',answer.unit,'Details'],...answer.rows.map(r=>[r.name,String(r.value),r.detail||''])].map(row=>row.map(v=>'"'+String(v).replace(/^[=+@-]/,"'$&").replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));const a=document.createElement('a');a.href=url;a.download='grandeur-inventory-insight.csv';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
- return <article className="gia-answer"><div className="gia-answer-brand"><span className="gia-mini-spark"><Sparkles size={17}/></span><strong>Grandeur Intelligence</strong><span>{answer.mode==='ai'?'AI analysis':'Inventory analysis'}</span></div><h2>{answer.title}</h2><p className="gia-answer-text">{answer.text}</p><div className="gia-metrics">{answer.metrics.map(m=><div key={m.label}><span>{m.label}</span><strong>{fmt(m.value)}</strong></div>)}</div><section className="gia-visual"><header><div><h3>{answer.chartLabel}</h3><span>{answer.scope} · {answer.unit}</span></div><div className="gia-view-toggle"><button type="button" aria-label="Show chart" aria-pressed={view==='chart'} onClick={()=>setView('chart')}><BarChart3 size={16}/></button><button type="button" aria-label="Show data table" aria-pressed={view==='table'} onClick={()=>setView('table')}><Table2 size={16}/></button><button type="button" aria-label="Download chart data" onClick={download}><Download size={16}/></button></div></header>{!rows.length?<p className="gia-no-data">No matching records for this question. Try a different scope or expiry period.</p>:view==='chart'?<div className="gia-bars">{rows.map((r,i)=><div className="gia-bar" key={r.name+i} tabIndex={0} title={`${r.name}: ${fmt(r.value)} ${answer.unit}. ${r.detail||''}`}><div><span>{r.name}</span><strong>{fmt(r.value)}</strong></div><div className="gia-track"><span style={{width:`${r.value/max*100}%`,background:`linear-gradient(90deg,${i%2?'#8b70dd':'#4878eb'},${i%2?'#b8a7ed':'#93b5ff'})`}}/></div>{r.detail&&<small>{r.detail}</small>}</div>)}</div>:<div className="gia-data-table"><table><thead><tr><th>Name</th><th>{answer.unit}</th><th>Details</th></tr></thead><tbody>{rows.map((r,i)=><tr key={r.name+i}><td>{r.name}</td><td>{fmt(r.value)}</td><td>{r.detail||'—'}</td></tr>)}</tbody></table></div>}{answer.rows.length>8&&<button className="gia-expand-rows" onClick={()=>setAll(!all)}>{all?'Show fewer':`View all ${answer.rows.length} records`}<ChevronDown size={15}/></button>}<div className="gia-chart-note"><Sparkles size={15}/><p>{answer.advice}</p></div></section><div className="gia-source"><span><Database size={13}/>Workspace records · {new Date(answer.updatedAt).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><Link href={answer.link} onClick={onClose}>Open source records <ArrowRight size={14}/></Link></div>{answer.mode==='fallback'&&<p className="gia-service-note">AI connection is unavailable. This answer uses the local inventory analysis.</p>}<div className="gia-followups">{answer.suggestions.map(q=><button key={q} onClick={()=>onAsk(q)}>{q}<ArrowRight size={13}/></button>)}</div></article>;
-}
+const examples=[
+ {title:'Show Mango inventory in Region I',icon:Boxes,response:'Static preview: Mango inventory can be reviewed by SKU and region from the inventory workspace. This screen is a design-only chatbot preview, so no live data is queried.'},
+ {title:'Which distributor has the highest stock?',icon:Database,response:'Static preview: Distributor stock ranking would appear here in the finished semantic report flow. No workspace data or AI service is called in this prototype screen.'},
+ {title:'How much inventory was manufactured last month?',icon:Clock3,response:'Static preview: Manufacturing summaries would be answered from a report query. This version stays static and does not fetch records.'},
+ {title:'Which SKUs are at risk of stock-out?',icon:MessageSquare,response:'Static preview: Stock-out risk answers would list SKUs, thresholds, and suggested review actions. This demo response is fixed text.'}
+];
 
 export default function InventoryAssistant(){
- const [open,setOpen]=useState(false);const [messages,setMessages]=useState<Message[]>([]);const [query,setQuery]=useState('');const [busy,setBusy]=useState(false);const [area,setArea]=useState('');const [distributor,setDistributor]=useState('');const [catalog,setCatalog]=useState<any>(null);const [catalogError,setCatalogError]=useState(false);
- const dialog=useRef<HTMLDialogElement>(null);const input=useRef<HTMLTextAreaElement>(null);const scroll=useRef<HTMLDivElement>(null);const launcher=useRef<HTMLButtonElement>(null);const pending=useRef<AbortController|null>(null);const locked=useRef(false);
- useEffect(()=>{if(open){dialog.current?.showModal();const previous=document.body.style.overflow;document.body.style.overflow='hidden';input.current?.focus();const controller=new AbortController();fetch('/api/workspace',{signal:controller.signal}).then(r=>{if(!r.ok)throw Error();return r.json()}).then(data=>{setCatalog(data);setCatalogError(false)}).catch(e=>{if(e.name!=='AbortError')setCatalogError(true)});return()=>{document.body.style.overflow=previous;controller.abort()};}dialog.current?.close();},[open]);
- useEffect(()=>{scroll.current?.scrollTo({top:scroll.current.scrollHeight,behavior:'smooth'})},[messages,busy]);
- useEffect(()=>()=>pending.current?.abort(),[]);
+ const [open,setOpen]=useState(false);
+ const [input,setInput]=useState('');
+ const [messages,setMessages]=useState<Message[]>([]);
+ const launcher=useRef<HTMLButtonElement>(null);
+ const dialog=useRef<HTMLDialogElement>(null);
+ const text=useRef<HTMLTextAreaElement>(null);
+ useEffect(()=>{if(open){dialog.current?.showModal();const previous=document.body.style.overflow;document.body.style.overflow='hidden';setTimeout(()=>text.current?.focus(),50);return()=>{document.body.style.overflow=previous};}dialog.current?.close();},[open]);
  function close(){setOpen(false);launcher.current?.focus()}
- function reset(){pending.current?.abort();pending.current=null;locked.current=false;setBusy(false);setMessages([]);setQuery('');input.current?.focus()}
- async function ask(value:string){if(locked.current||!value.trim())return;const question=value.trim().slice(0,2000);const id=crypto.randomUUID();const previous=messages.at(-1);setMessages(m=>[...m,{id,query:question}]);setQuery('');locked.current=true;setBusy(true);const controller=new AbortController();pending.current=controller;
-  try{const r=await fetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({query:question,area,distributor,previousIntent:previous?.answer?.intent,previousQuery:previous?.query})});const json=await r.json();if(!r.ok)throw Error(json.error||'Unable to answer right now.');setMessages(m=>m.map(item=>item.id===id?{...item,answer:json}:item));}catch(e){if((e as Error).name!=='AbortError')setMessages(m=>m.map(item=>item.id===id?{...item,error:(e as Error).message}:item));}finally{if(pending.current===controller){locked.current=false;setBusy(false);input.current?.focus()}}}
- const areas:string[]=catalog?[...new Set<string>([...catalog.warehouses,...catalog.distributors].flatMap((r:any)=>[r.region,r.territory]).filter(Boolean))]:[];
- return <><button ref={launcher} className="gia-launcher" onClick={()=>setOpen(true)} aria-label="Open Grandeur AI inventory assistant" aria-haspopup="dialog"><span><Sparkles size={23}/></span><div><strong>Ask Grandeur AI</strong><small>Your inventory, explained</small></div><span className="gia-launcher-dot"/></button><dialog ref={dialog} className="gia-dialog" aria-labelledby="gia-title" onCancel={e=>{e.preventDefault();close()}}><div className="gia-app"><header className="gia-header"><div className="gia-logo"><Sparkles size={24}/></div><div><h1 id="gia-title">Grandeur <span>Intelligence</span></h1><p>Your inventory thinking partner</p></div><div className="gia-header-status"><i/>Connected to workspace</div><button className="gia-close" aria-label="Close inventory assistant" onClick={close}><X size={23}/></button></header><div className="gia-body"><aside className="gia-sidebar"><button className="gia-new" onClick={reset}><Plus size={18}/>New conversation</button><span className="gia-eyebrow">YOUR WORKSPACE, IN FOCUS</span><p className="gia-sidebar-description">From stock questions to clearer decisions. Start with what matters today.</p><nav aria-label="Assistant topics">{suggestions.map(s=><button key={s.label} disabled={busy} onClick={()=>ask(s.query)}><s.icon size={18}/>{s.label}<ArrowRight size={14}/></button>)}</nav><div className="gia-scope"><span className="gia-eyebrow">ANSWER SCOPE</span><label>Region<select value={area} onChange={e=>{setArea(e.target.value);setDistributor('')}} disabled={busy||!catalog}><option value="">All regions</option>{areas.map(a=><option key={a}>{a}</option>)}</select></label><label>Distributor<select value={distributor} onChange={e=>setDistributor(e.target.value)} disabled={busy||!catalog}><option value="">All distributors</option>{catalog?.distributors.filter((d:any)=>!area||d.region===area||d.territory===area).map((d:any)=><option key={d.id} value={d.id}>{d.name}</option>)}</select></label><small>Applied to your next question. You can also name a region or flavor in your message.</small>{catalogError&&<small role="alert">Scope options could not load. Reopen the assistant to retry.</small>}</div><div className="gia-sidebar-footer"><ShieldCheck size={19}/><p><strong>Grounded in your inventory</strong><br/>Answers reference workspace records. You stay in control of every action.</p></div></aside><main className="gia-main"><div className="gia-scroll" ref={scroll}>{messages.length===0?<div className="gia-welcome"><div className="gia-welcome-mark"><Sparkles size={36}/><span/></div><div className="gia-pill"><span/>INVENTORY INTELLIGENCE</div><h2>Less searching.<br/><span>More understanding.</span></h2><p>Ask a question. Uncover the story behind your stock.<br/>Get clear answers, visual insights, and a next step.</p><div className="gia-starters">{suggestions.map(s=><button key={s.label} onClick={()=>ask(s.query)}><span className="gia-starter-icon"><s.icon size={21}/></span><strong>{s.label}</strong><small>{s.hint}</small><ArrowRight size={17}/></button>)}</div><div className="gia-capabilities"><span><Check size={13}/>Current inventory records</span><span><Check size={13}/>Visual answers</span><span><Check size={13}/>Region-aware insights</span></div></div>:<div className="gia-conversation">{messages.map(m=><div key={m.id} className="gia-exchange"><div className="gia-question"><span>You</span><p>{m.query}</p></div>{m.answer&&<Result answer={m.answer} onAsk={ask} onClose={close}/>} {m.error&&<div className="gia-error" role="alert"><p>{m.error}</p><button disabled={busy} onClick={()=>ask(m.query)}>Try again <ArrowRight size={14}/></button></div>}</div>)}{busy&&<div className="gia-thinking" role="status"><LoaderCircle size={20}/><div><strong>Connecting the dots…</strong><span>Reading your inventory and preparing insights</span></div></div>}</div>}</div><footer className="gia-composer-wrap"><form className="gia-composer" onSubmit={e=>{e.preventDefault();ask(query)}}><Sparkles size={20}/><textarea ref={input} aria-label="Ask an inventory question" placeholder="Ask anything about your inventory…" rows={1} maxLength={2000} value={query} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();ask(query)}}}/><button type="submit" disabled={busy||!query.trim()} aria-label="Send inventory question">{busy?<LoaderCircle size={21}/>:<ArrowUp size={22}/>}</button></form><div className="gia-composer-meta"><span><Database size={12}/>Workspace-grounded answers · Local analysis unless AI is configured</span><span>Enter to send · Shift + Enter for a new line</span></div></footer></main></div></div></dialog></>;
+ function ask(value:string,response?:string){const question=value.trim();if(!question)return;setMessages(items=>[...items,{id:crypto.randomUUID(),role:'user',text:question},{id:crypto.randomUUID(),role:'bot',text:response||'Static preview: The Bonko reporting chatbot screen is ready for interaction. This response is fixed demo text and does not query data, call AI, or consume external tokens.'}]);setInput('')}
+ return <>
+  <button ref={launcher} className="gia-launcher mascot-launcher" onClick={()=>setOpen(true)} aria-label="Open Bonko reporting chatbot" aria-haspopup="dialog">
+   <Image src="/bonko-chatbot-icon.png" alt="" width={86} height={86} priority/>
+   <span className="gia-launcher-dot"/>
+  </button>
+  <dialog ref={dialog} className="gia-dialog bonko-chat-screen" aria-labelledby="gia-title" onCancel={e=>{e.preventDefault();close()}}>
+   <div className="bonko-chat-app">
+    <aside className="bonko-chat-rail" aria-label="Chat navigation">
+     <div className="bonko-rail-logo"><Image src="/bonko-chatbot-icon.png" alt="" width={34} height={34}/></div>
+     <button aria-label="Home"><Home size={19}/></button>
+     <button aria-label="Messages"><MessageSquare size={19}/></button>
+     <button aria-label="Recent reports"><Clock3 size={19}/></button>
+     <button aria-label="Report files"><FileText size={19}/></button>
+     <button aria-label="Connected data"><Database size={19}/></button>
+     <div className="bonko-rail-bottom">
+      <button aria-label="Settings"><Settings size={19}/></button>
+      <span className="bonko-user">IM</span>
+     </div>
+    </aside>
+    <main className="bonko-chat-main">
+     <header className="bonko-chat-topbar">
+      <button className="bonko-back" onClick={close}><ArrowLeft size={18}/>Back to workspace</button>
+      <button className="bonko-model"><Sparkles size={15}/>Bonko Static 4o</button>
+      <div className="bonko-top-actions">
+       <label className="bonko-search"><Search size={16}/><input placeholder="Search thread" aria-label="Search thread"/></label>
+       <button><UserPlus size={16}/>Invite</button>
+       <button><Plus size={16}/>New Thread</button>
+       <button className="bonko-icon-button" aria-label="Close chatbot" onClick={close}><X size={18}/></button>
+      </div>
+     </header>
+     <section className="bonko-chat-content">
+      {messages.length===0?<div className="bonko-chat-home">
+       <div className="bonko-orb"><Image src="/bonko-chatbot-icon.png" alt="" width={86} height={86}/></div>
+       <h1>Good Afternoon,<br/>Grandeur Team<br/><span>What report do you need?</span></h1>
+       <form className="bonko-prompt" onSubmit={e=>{e.preventDefault();ask(input)}}>
+        <div className="bonko-prompt-input"><Sparkles size={18}/><textarea ref={text} value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask Bonko a static reporting question..." rows={3} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(input)}}}/></div>
+        <div className="bonko-prompt-actions">
+         <button type="button"><FileText size={15}/>Attach</button>
+         <button type="button">Reporting Style</button>
+         <span>Static demo</span>
+         <button className="bonko-send" disabled={!input.trim()} aria-label="Send question"><ArrowUp size={18}/></button>
+        </div>
+       </form>
+       <div className="bonko-example-label">GET STARTED WITH AN EXAMPLE BELOW</div>
+       <div className="bonko-examples">{examples.map(item=><button key={item.title} onClick={()=>ask(item.title,item.response)}><span>{item.title}</span><item.icon size={19}/></button>)}</div>
+      </div>:<div className="bonko-thread">
+       <div className="bonko-thread-title"><Image src="/bonko-chatbot-icon.png" alt="" width={42} height={42}/><div><h1>Bonko Reporting Chat</h1><p>Static demo conversation. No live data, no AI API calls.</p></div></div>
+       <div className="bonko-messages">{messages.map(m=><article key={m.id} className={'bonko-message '+m.role}><strong>{m.role==='user'?'You':'Bonko Static Bot'}</strong><p>{m.text}</p></article>)}</div>
+       <form className="bonko-thread-composer" onSubmit={e=>{e.preventDefault();ask(input)}}>
+        <textarea ref={text} value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask another static report question..." rows={1} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(input)}}}/>
+        <button disabled={!input.trim()} aria-label="Send question"><ArrowUp size={18}/></button>
+       </form>
+      </div>}
+     </section>
+    </main>
+   </div>
+  </dialog>
+ </>;
 }
