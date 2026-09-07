@@ -27,13 +27,13 @@ export default function InventoryAssistant(){
  async function ask(value:string){const question=value.trim();if(!question)return;const userId=crypto.randomUUID();setMessages(items=>[...items,{id:userId,role:'user',text:question}]);setInput('');setLoading(true);try{const res=await fetch('/api/assistant',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});const data=await res.json();const answer=data.answer||data.error||'No answer returned.';setMessages(items=>[...items,{id:crypto.randomUUID(),role:'bot',text:answer}]);}catch{setMessages(items=>[...items,{id:crypto.randomUUID(),role:'bot',text:'Sorry, I could not reach the reporting service. Please try again.'}]);}finally{setLoading(false);}}
  return <>
   <button ref={launcher} className="gia-launcher mascot-launcher" onClick={()=>setOpen(true)} aria-label="Open Bonko reporting chatbot" aria-haspopup="dialog">
-   <Image src="/bonko-chatbot-icon.png" alt="" width={86} height={86} priority/>
+   <Image src="/bonko-chatbot-icon-new.png" alt="" width={86} height={86} priority/>
    <span className="gia-launcher-dot"/>
   </button>
   <dialog ref={dialog} className="gia-dialog bonko-chat-screen" aria-labelledby="gia-title" onCancel={e=>{e.preventDefault();close()}}>
    <div className="bonko-chat-app">
     <aside className="bonko-chat-rail" aria-label="Chat navigation">
-     <div className="bonko-rail-logo"><Image src="/bonko-chatbot-icon.png" alt="" width={34} height={34}/></div>
+     <div className="bonko-rail-logo"><Image src="/bonko-chatbot-icon-new.png" alt="" width={34} height={34}/></div>
      <button aria-label="Home"><Home size={19}/></button>
      <button aria-label="Messages"><MessageSquare size={19}/></button>
      <button aria-label="Recent reports"><Clock3 size={19}/></button>
@@ -57,7 +57,7 @@ export default function InventoryAssistant(){
      </header>
      <section className="bonko-chat-content">
       {messages.length===0?<div className="bonko-chat-home">
-       <div className="bonko-orb"><Image src="/bonko-chatbot-icon.png" alt="" width={86} height={86}/></div>
+       <div className="bonko-orb"><Image src="/bonko-chatbot-icon-new.png" alt="" width={86} height={86}/></div>
        <h1>Good Afternoon,<br/>Grandeur Team<br/><span>What report do you need?</span></h1>
        <form className="bonko-prompt" onSubmit={e=>{e.preventDefault();ask(input)}}>
         <div className="bonko-prompt-input"><Sparkles size={18}/><textarea ref={text} value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask Bonko a workspace reporting question..." rows={3} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(input)}}}/></div>
@@ -71,7 +71,7 @@ export default function InventoryAssistant(){
        <div className="bonko-example-label">GET STARTED WITH AN EXAMPLE BELOW</div>
        <div className="bonko-examples">{examples.map(item=><button key={item.title} onClick={()=>ask(item.title)}><span>{item.title}</span><item.icon size={19}/></button>)}</div>
       </div>:<div className="bonko-thread">
-       <div className="bonko-thread-title"><Image src="/bonko-chatbot-icon.png" alt="" width={42} height={42}/><div><h1>Bonko Reporting Chat</h1><p>Answers from live workspace data.</p></div></div>
+       <div className="bonko-thread-title"><Image src="/bonko-chatbot-icon-new.png" alt="" width={42} height={42}/><div><h1>Bonko Reporting Chat</h1><p>Answers from live workspace data.</p></div></div>
        <div className="bonko-messages">{messages.map(m=><article key={m.id} className={'bonko-message '+m.role}><strong>{m.role==='user'?'You':'Bonko Workspace Bot'}</strong><p>{m.text}</p></article>)}{loading&&<article className="bonko-message bot"><strong>Bonko Workspace Bot</strong><p>Thinking...</p></article>}</div>
        <form className="bonko-thread-composer" onSubmit={e=>{e.preventDefault();ask(input)}}>
         <textarea ref={text} value={input} onChange={e=>setInput(e.target.value)} placeholder="Ask another workspace report question..." rows={1} onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();ask(input)}}}/>
