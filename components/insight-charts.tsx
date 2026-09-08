@@ -2,7 +2,6 @@
 
 import {useState} from 'react';
 import Link from 'next/link';
-import {LineChart} from '@mui/x-charts/LineChart';
 import {Info} from 'lucide-react';
 import {CoverageTable} from './demo-analytics';
 import {inventory} from '../lib/engine.mjs';
@@ -25,24 +24,6 @@ function Donut({items,unit}:any){
  </div>;
 }
 
-function ForecastManufacturingSalesChart(){
- const months=['Jan','Feb','Mar','Apr'];
- const format=(v:number|null)=>v==null?'':v>=1000?`${Number(v/1000).toLocaleString('en-US',{maximumFractionDigits:1})}K`:String(v);
- return <article className="mui-variance-card">
-  <div className="chart-card-heading"><div><h3>Forecast vs Manufacturing vs Sales</h3><p>Monthly comparison of forecast, manufacturing, and sales values from January to April.</p></div></div>
-  <LineChart height={288} xAxis={[{scaleType:'point',data:months}]} yAxis={[{min:8000,max:16000,width:48,valueFormatter:format}]} series={[{data:[10000,11000,12000,13000],label:'Forecast',color:'#4d92f7',curve:'linear',showMark:true,valueFormatter:format},{data:[9500,12000,11000,14000],label:'Manufacturing',color:'#5fc678',curve:'linear',showMark:true,valueFormatter:format},{data:[9000,10500,12500,12000],label:'Sales',color:'#f0814f',curve:'linear',showMark:true,valueFormatter:format}]} margin={{left:8,right:18,top:22,bottom:38}} grid={{horizontal:true}} slotProps={{legend:{direction:'horizontal',position:{vertical:'bottom',horizontal:'center'}}}} />
- </article>;
-}
-
-function ExpiryTimeline({s}:any){
- const [months,setMonths]=useState(1);
- const batches=s.batches.filter((b:any)=>{const days=Math.ceil((new Date(b.expiry).getTime()-Date.now())/86400000);return b.quantity>0&&days>=0&&days<=months*30}).sort((a:any,b:any)=>a.expiry.localeCompare(b.expiry));
- return <article>
-  <div className="chart-card-heading"><h3>Expiry timeline</h3><label className="expiry-select"><select aria-label="Dashboard expiry window" value={months} onChange={e=>setMonths(Number(e.target.value))}><option value={1}>1 month</option><option value={2}>2 months</option></select></label></div>
-  {batches.length?<>{batches.slice(0,5).map((b:any)=>{const days=Math.ceil((new Date(b.expiry).getTime()-Date.now())/86400000);return <Link className="timeline-row expiry-count-row" href="/quality" key={b.id}><div className="expiry-batch"><span className="expiry-batch-dot" aria-hidden="true"/><strong>Batch {b.batch}</strong></div><span className="expiry-day-count"><strong>{days}</strong><small>{days===1?'day':'days'}</small></span></Link>})}</>:<div className="chart-empty"><strong>No batches expiring within {months===1?'one':'two'} month{months===1?'':'s'}</strong><Link href="/inventory">Receive stock to monitor expiry →</Link></div>}
- </article>;
-}
-
 export default function InsightCharts({s,initialTab='Coverage & demand'}:any){
  const [tab,setTab]=useState(initialTab);
  const [currency,setCurrency]=useState('PHP');
@@ -57,8 +38,6 @@ export default function InsightCharts({s,initialTab='Coverage & demand'}:any){
   <div className="tabs explorer-tabs">{['Coverage & demand','Regional distribution','Financial exposure'].map(t=><button key={t} className={tab===t?'active':''} onClick={()=>setTab(t)}>{t}</button>)}</div>
   {tab==='Coverage & demand'?<div className="explorer-grid">
    <article className="coverage-panel"><h3>Days of cover · SKU × region</h3><CoverageTable s={s}/></article>
-   <ForecastManufacturingSalesChart/>
-   <ExpiryTimeline s={s}/>
   </div>:tab==='Regional distribution'?<div className="explorer-grid regional-distribution-grid">
    <article className="regional-card regional-donut-card">
     <div className="regional-card-heading"><h3>Regional share of sales</h3><p>Distribution of recent reported movement to trade</p></div>
