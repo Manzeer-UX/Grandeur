@@ -371,3 +371,23 @@ main{width:100%;max-width:none}
 @media(max-width:960px){.sarai-topbar-brand{height:46px;padding-left:15px}.sarai-topbar-logo{width:112px}}
 @media(max-width:760px){.sarai-topbar-brand{height:40px;margin-left:0;padding-left:10px}.sarai-topbar-logo{width:94px}}
 @media(max-width:420px){.topbar-actions>.avatar.small{display:none}.sarai-topbar-logo{width:82px}}
+.regional-view{border:1px solid #dce5ef;background:#fff;border-radius:10px;box-shadow:0 8px 24px rgba(31,61,95,.045)}
+.regional-view>.panel-heading{padding:22px 24px 12px}
+.regional-view>.explorer-tabs{margin:0 24px}
+.regional-distribution-grid{padding-top:0;border-top:1px solid #edf1f6}
+.regional-distribution-grid>article.regional-card{padding:26px 30px 24px}
+.regional-card-heading{margin-bottom:22px}
+.regional-distribution-grid .regional-card-heading h3{font-size:.95rem}
+.regional-distribution-grid .regional-card-heading p{margin-top:6px;font-size:.75rem}
+.regional-donut-card .donut-layout{grid-template-columns:132px minmax(0,1fr);gap:18px 26px}
+.regional-donut-card .donut-wrap{width:124px;height:124px}
+.regional-donut-card .donut-wrap svg{filter:drop-shadow(0 8px 14px rgba(52,96,158,.08))}
+.regional-donut-card .donut-wrap strong{font-size:1.35rem}
+.regional-donut-card .donut-wrap small{font-size:.58rem}
+.regional-donut-card .donut-legend>div{min-height:38px;padding:0 2px}
+.regional-donut-card .donut-legend span{font-size:.78rem}
+.regional-donut-card .donut-legend strong{font-size:.78rem}
+.regional-donut-card .donut-legend strong small{font-size:.64rem}
+.regional-donut-card .chart-caption{max-width:88%;padding:9px 11px;font-size:.72rem}
+@media(max-width:860px){.regional-view>.panel-heading{padding:20px 18px 10px}.regional-view>.explorer-tabs{margin:0 18px}.regional-donut-card .chart-caption{max-width:100%}}
+@media(max-width:480px){.regional-donut-card .donut-layout{grid-template-columns:104px minmax(0,1fr)}.regional-donut-card .donut-wrap{width:98px;height:98px}.regional-donut-card .donut-wrap strong{font-size:1rem}.regional-donut-card .chart-caption{font-size:.68rem}}
