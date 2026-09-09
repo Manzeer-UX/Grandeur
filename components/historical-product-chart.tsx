@@ -1,5 +1,7 @@
 'use client';
 
+import {useState} from 'react';
+
 type ChartItem={label:string;value:number;lines?:string[]};
 
 const regional:ChartItem[]=[
@@ -26,6 +28,8 @@ const categories:ChartItem[]=[
 const formatNumber=(value:number)=>value.toLocaleString('en-US');
 
 function SalesBarChart({title,items,max,ticks,xLabel}:{title:string;items:ChartItem[];max:number;ticks:number[];xLabel:string}){
+  const [hovered,setHovered]=useState<number|null>(null);
+  const [selected,setSelected]=useState<number|null>(null);
   const chart={width:620,height:502,left:58,right:16,top:52,bottom:90};
   const plotWidth=chart.width-chart.left-chart.right;
   const plotHeight=chart.height-chart.top-chart.bottom;
@@ -33,6 +37,10 @@ function SalesBarChart({title,items,max,ticks,xLabel}:{title:string;items:ChartI
   const barWidth=36;
   const baseline=chart.top+plotHeight;
   const gradientId=`sales-trade-${items.length}-gradient`;
+  const active=hovered??selected;
+  const total=items.reduce((sum,item)=>sum+item.value,0);
+  const ranks=[...items].sort((a,b)=>b.value-a.value).map(item=>item.label);
+  const activeTooltip=active===null?null:(()=>{const item=items[active];const x=chart.left+active*step+(step-barWidth)/2;const y=baseline-(item.value/max)*plotHeight;const width=166;return {item,x:Math.max(chart.left,Math.min(chart.width-chart.right-width,x+barWidth/2-width/2)),y:Math.max(6,y-62),width,share:total?item.value/total*100:0,rank:ranks.indexOf(item.label)+1,label:item.label.length>22?`${item.label.slice(0,21)}…`:item.label}})();
   return <figure className="sales-trade-chart">
     <figcaption>{title}</figcaption>
     <svg viewBox={`0 0 ${chart.width} ${chart.height}`} role="img" aria-label={title}>
@@ -52,12 +60,15 @@ function SalesBarChart({title,items,max,ticks,xLabel}:{title:string;items:ChartI
         const lines=item.lines||[item.label];
         const radius=Math.min(barWidth/2,barHeight);
         const barPath=`M ${x} ${baseline} V ${y+radius} A ${radius} ${radius} 0 0 1 ${x+radius} ${y} H ${x+barWidth-radius} A ${radius} ${radius} 0 0 1 ${x+barWidth} ${y+radius} V ${baseline} Z`;
-        return <g key={item.label}>
+        const share=total?item.value/total*100:0;
+        const isActive=active===index;
+        return <g key={item.label} className={`sales-trade-series${isActive?' is-active':active!==null?' is-muted':''}`} role="button" tabIndex={0} aria-label={`${item.label}, ${formatNumber(item.value)} cases, ${share.toFixed(1)} percent of chart total, rank ${ranks.indexOf(item.label)+1}`} aria-pressed={selected===index} onMouseEnter={()=>setHovered(index)} onMouseLeave={()=>setHovered(null)} onFocus={()=>setHovered(index)} onBlur={()=>setHovered(null)} onClick={()=>setSelected(selected===index?null:index)} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();setSelected(selected===index?null:index)}}}>
           <path className="sales-trade-bar" d={barPath} stroke="#e2e8f0" strokeWidth="1" style={{fill:`url(#${gradientId})`,filter:'drop-shadow(0 8px 24px rgba(31,61,95,.05))'}}/>
           <text className="sales-trade-value" x={x+barWidth/2} y={y-10} textAnchor="middle">{formatNumber(item.value)}</text>
           <text className="sales-trade-category" x={x+barWidth/2} y={baseline+20} textAnchor="middle">{lines.map((line,lineIndex)=><tspan key={line} x={x+barWidth/2} dy={lineIndex===0?0:15}>{line}</tspan>)}</text>
         </g>;
       })}
+      {activeTooltip&&<g className="sales-trade-tooltip" aria-hidden="true"><rect x={activeTooltip.x} y={activeTooltip.y} width={activeTooltip.width} height="48" rx="7"/><text className="sales-trade-tooltip-title" x={activeTooltip.x+10} y={activeTooltip.y+18}>{activeTooltip.label}</text><text className="sales-trade-tooltip-value" x={activeTooltip.x+10} y={activeTooltip.y+36}>{formatNumber(activeTooltip.item.value)} cases · {activeTooltip.share.toFixed(1)}% · #{activeTooltip.rank}</text></g>}
       <text className="sales-trade-x-label" x={chart.left+plotWidth/2} y={chart.height-26} textAnchor="middle">{xLabel}</text>
       <text className="sales-trade-total" x={chart.left+plotWidth/2} y={chart.height-5} textAnchor="middle">Total STT: 34,777</text>
     </svg>

@@ -7,6 +7,7 @@ import {CoverageTable} from './demo-analytics';
 import {inventory} from '../lib/engine.mjs';
 
 const colors=['#3b82f6','#8b5cf6','#10b981','#f59e0b'];
+const compactTotal=(value:number)=>value>=1000?`${(value/1000).toFixed(value>=100000?0:1).replace(/\.0$/,'')}k`:value.toLocaleString();
 
 function Donut({items,unit}:any){
  const total=items.reduce((n:number,i:any)=>n+i.value,0);
@@ -15,11 +16,11 @@ function Donut({items,unit}:any){
   <div className="donut-wrap">
    <svg viewBox="0 0 120 120" role="img" aria-label={items.map((i:any)=>`${i.name}: ${i.value}`).join(', ')}>
     <circle cx="60" cy="60" r="43" fill="none" stroke="#eef2f7" strokeWidth="15"/>
-    {total>0&&items.map((i:any,index:number)=>{const length=i.value/total*270.18;const node=<circle key={i.name} cx="60" cy="60" r="43" fill="none" stroke={colors[index%4]} strokeWidth="15" strokeDasharray={`${length} ${270.18-length}`} strokeDashoffset={-offset} transform="rotate(-90 60 60)"/>;offset+=length;return node})}
+   {total>0&&items.map((i:any,index:number)=>{const length=i.value/total*270.18;const node=<circle key={i.name} cx="60" cy="60" r="43" fill="none" stroke={colors[index%4]} strokeWidth="15" strokeDasharray={`${length} ${270.18-length}`} strokeDashoffset={-offset} transform="rotate(-90 60 60)"/>;offset+=length;return node})}
    </svg>
-   <div><strong>{total?total.toLocaleString():'—'}</strong><small>{total?'RECORDED':'NO DATA'}</small></div>
+   <div className="donut-center"><strong title={total.toLocaleString()}>{total?compactTotal(total):'—'}</strong><small>{total?(unit?'TOTAL CASES':'TOTAL VALUE'):'NO DATA'}</small></div>
   </div>
-  <div className="donut-legend">{items.map((i:any,index:number)=><div key={i.name}><i style={{background:colors[index%4]}}/><span>{i.name}</span><strong>{i.value.toLocaleString()}{unit&&<> <small>{unit}</small></>}</strong></div>)}</div>
+  <div className="donut-legend"><div className="donut-total"><span>Total recorded</span><strong>{total?total.toLocaleString():'—'}{unit&&<> <small>{unit}</small></>}</strong></div>{items.map((i:any,index:number)=><div key={i.name}><i style={{background:colors[index%4]}}/><span>{i.name}</span><strong>{i.value.toLocaleString()}{unit&&<> <small>{unit}</small></>}</strong></div>)}</div>
   <p className="chart-caption"><Info size={11}/>Use the split to see where demand or stock is concentrated.</p>
  </div>;
 }

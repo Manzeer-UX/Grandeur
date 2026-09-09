@@ -12,7 +12,6 @@ export const modules=[
  ['analytics','Sales performance','Compare reported sales-to-trade and dispatches to distributors.','ChartNoAxesCombined','INTELLIGENCE'],
  ['forecasting','AI insights','Forecast demand by SKU and region using adaptive seasonality and expandable demand factors.','Sparkles',''],
  ['integrations','Data & integrations','Map CSV or Excel files and reconcile stock without creating orders.','Cable','ADMINISTRATION'],
- ['alerts','Alert settings','Configure inventory alerts and notification rules.','Bell','ADMINISTRATION'],
  ['configuration','Rules & configuration','Configure workflows, reasons, countries, currencies, and time zones.','Settings2',''],
  ['users','Users & roles','Configure role permissions and warehouse access for your team.','Users',''],
 ];
@@ -46,4 +45,3 @@ export const schemas:Record<string,Field[]>={
  shipments:[f('reference','Shipment reference'),f('distributor','Distributor name','select',{source:'distributors'}),f('warehouse','Source warehouse','select',{source:'warehouses'}),f('order','Order','select',{source:'orders'}),f('dispatchDate','Dispatch date','date'),f('deliveryDate','Expected delivery','date'),f('status','Status','select',{options:['Created','Loading','Dispatched','In transit','Delivered','Verified']}),f('initiatedBy','Initiated by'),f('verifiedBy','Receipt verified by','text',{required:false}),f('notes','Shipment notes','textarea',{required:false})]
 };
 export const examples=[{title:'Prioritize Batch #82 for dispatch',why:'The document illustrates a batch expiring in four days. FEFO prioritizes the earliest expiry.',tag:'Shelf life',route:'quality'},{title:'Review Mango production in Region A',why:'The document describes excess Mango inventory. Reduce the next cycle when stock exceeds demand.',tag:'Production',route:'forecasting'},{title:'Review Blackcurrant sell-through',why:'The document illustrates a 20% month-over-month decline in Region A.',tag:'Demand',route:'analytics'},{title:'Hold shipments to Distributor X',why:'The document illustrates stock at roughly 3× average sell-through.',tag:'Allocation',route:'distributors'}];
-
